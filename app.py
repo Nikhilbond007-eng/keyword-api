@@ -1,9 +1,19 @@
-from flask import Flask, request, jsonify
 from google.ads.googleads.client import GoogleAdsClient
 
 app = Flask(__name__)
 
-client = GoogleAdsClient.load_from_storage("google-ads.yaml")
+import os
+from google.ads.googleads.client import GoogleAdsClient
+
+config = {
+    "developer_token": os.environ.get("DEVELOPER_TOKEN"),
+    "client_id": os.environ.get("CLIENT_ID"),
+    "client_secret": os.environ.get("CLIENT_SECRET"),
+    "refresh_token": os.environ.get("REFRESH_TOKEN"),
+    "use_proto_plus": True,
+}
+
+client = GoogleAdsClient.load_from_dict(config)
 
 @app.route("/keywords")
 def get_keywords():
