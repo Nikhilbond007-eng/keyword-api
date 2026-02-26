@@ -2,15 +2,10 @@ from flask import Flask, request, jsonify
 import os
 from google.ads.googleads.client import GoogleAdsClient
 
-# ----------------------------
-# Create Flask App
-# ----------------------------
+# Create Flask app
 app = Flask(__name__)
 
-# ----------------------------
-# Load Google Ads credentials
-# (from Render Environment Variables)
-# ----------------------------
+# Load credentials from Render environment variables
 config = {
     "developer_token": os.environ.get("DEVELOPER_TOKEN"),
     "client_id": os.environ.get("CLIENT_ID"),
@@ -19,46 +14,54 @@ config = {
     "use_proto_plus": True,
 }
 
-# Initialize Google Ads Client
 client = GoogleAdsClient.load_from_dict(config)
 
-# ----------------------------
-# API Route
-# ----------------------------
+
+@app.route("/")
+def home():
+    return "Keyword API Running ✅"
+
+
 @app.route("/keywords")
 def get_keywords():
     try:
         keyword = request.args.get("keyword")
 
-        # Your Google Ads Customer ID (NO DASHES)
-        customer_id = "9164552447"
+        customer_id = "9164552447"  # NO DASHES
 
-        ga_service = client.get_service("GoogleAdsService")
-
-        query = """
-            SELECT campaign.id
-            FROM campaign
-            LIMIT 1
-        """
-
-        response = ga_service.search(
-            customer_id=customer_id,
-            query=query
+        keyword_plan_idea_service = client.get_service(
+            "KeywordPlanIdeaService"
         )
 
-        return jsonify({
-            "status": "API working ✅",
-            "keyword": keyword
-        })
+        request_data = {
+            "customer_id": customer_id,
+            "keyword_seed": {
+                "keywords": [keyword]
+            },
+            "geo_target_constants": [
+                "geoTargetConstants/2840"  # USA
+            ],
+            "language": "languageConstants/1000",
+        }
+
+        response = keyword_plan_idea_service.generate_keyword_ideas(
+            request=request_data
+        )
+
+        results = []
+
+        for idea in response.results[:20]:
+            results.append({
+                "keyword": idea.text,
+                "avg_monthly_searches":
+                    idea.keyword_idea_metrics.avg_monthly_searches
+            })
+
+        return jsonify(results)
 
     except Exception as e:
-        return jsonify({
-            "error": str(e)
-        }), 500
+        return jsonify({"error": str(e)}), 500
 
 
-# ----------------------------
-# Run Server (Render uses this)
-# ----------------------------
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
