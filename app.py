@@ -1,4 +1,3 @@
-from flask import Flask, request, jsonify
 import os
 from google.ads.googleads.client import GoogleAdsClient
 
@@ -19,27 +18,34 @@ client = GoogleAdsClient.load_from_dict(config)
 
 @app.route("/keywords")
 def get_keywords():
-    keyword = request.args.get("keyword")
+    try:
+        keyword = request.args.get("keyword")
 
-    customer_id = "9164552447"  # your ads customer id (no dashes if error later)
+        # Google Ads Customer ID (NO DASHES)
+        customer_id = "9164552447"
 
-    ga_service = client.get_service("GoogleAdsService")
+        ga_service = client.get_service("GoogleAdsService")
 
-    query = """
-        SELECT campaign.id
-        FROM campaign
-        LIMIT 1
-    """
+        query = """
+            SELECT campaign.id
+            FROM campaign
+            LIMIT 1
+        """
 
-    response = ga_service.search(
-        customer_id=customer_id,
-        query=query
-    )
+        response = ga_service.search(
+            customer_id=customer_id,
+            query=query
+        )
 
-    return jsonify({
-        "status": "API working ✅",
-        "keyword": keyword
-    })
+        return jsonify({
+            "status": "API working ✅",
+            "keyword": keyword
+        })
+
+    except Exception as e:
+        return jsonify({
+            "error": str(e)
+        }), 500
 
 
 if __name__ == "__main__":
